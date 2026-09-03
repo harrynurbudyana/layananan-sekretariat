@@ -1,4 +1,5 @@
 import { getDashboardStats, getUnits, getCategories } from "@/actions/letter-actions";
+import { getRoomDashboardStats } from "@/actions/room-actions";
 import { formatDateIndo, formatDateTimeIndo, getCategoryBadgeClass } from "@/lib/utils";
 import Link from "next/link";
 import {
@@ -13,15 +14,17 @@ import {
   Clock,
   Layers,
   CheckCircle2,
+  CalendarDays,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [stats, units, categories] = await Promise.all([
+  const [stats, units, categories, roomStats] = await Promise.all([
     getDashboardStats(),
     getUnits(),
     getCategories(),
+    getRoomDashboardStats(),
   ]);
 
   return (
@@ -55,6 +58,13 @@ export default async function DashboardPage() {
           >
             <BookOpenCheck className="h-4 w-4" />
             <span>Buku Agenda</span>
+          </Link>
+          <Link
+            href="/ruangan"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95"
+          >
+            <CalendarDays className="h-4 w-4" />
+            <span>Pinjam Ruangan</span>
           </Link>
         </div>
       </div>
@@ -135,6 +145,39 @@ export default async function DashboardPage() {
             <Layers className="h-6 w-6" />
           </div>
         </div>
+      </div>
+
+      {/* Layanan Peminjaman Ruangan Quick Banner */}
+      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl p-5 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="h-12 w-12 rounded-xl bg-blue-600/80 text-white flex items-center justify-center shrink-0 shadow-inner">
+            <CalendarDays className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-300">
+                Layanan Sarana & Prasarana
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                Database Terpisah (rooms.db)
+              </span>
+            </div>
+            <h3 className="text-base font-bold text-white mt-0.5">
+              Peminjaman Ruang Rapat & Multimedia FIT
+            </h3>
+            <p className="text-xs text-blue-100/80 mt-0.5">
+              {roomStats.totalRooms} Ruangan Resmi Aktif (Adaut, Namtabung, Multimedia 1 & 2, Learning Lounge) &bull; {roomStats.todayBookingsCount} Jadwal Hari Ini
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/ruangan"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-blue-900 hover:bg-blue-50 text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm active:scale-95"
+        >
+          <span>Buka Layanan Ruangan</span>
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
       {/* Main Two-Column Layout */}

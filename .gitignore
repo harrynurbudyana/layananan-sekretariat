@@ -29,12 +29,14 @@ next-env.d.ts
 .env.production.local
 !.env.example
 
-# 4. SQLite Database & Local Storage (dev.db disertakan agar data riil ikut terdeploy)
+# 4. SQLite Database & Local Storage (dev.db dan rooms.db disertakan agar data riil ikut terdeploy)
 *.db-journal
 *.sqlite-journal
 prisma/*.db-journal
 prisma/dev.db-journal
+prisma/rooms.db-journal
 !prisma/dev.db
+!prisma/rooms.db
 
 # 5. Logs & Debug
 npm-debug.log*

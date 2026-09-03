@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/room-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_ROOMS_URL")
+}
+
+model Room {
+  id              String        @id @default(cuid())
+  name            String        @unique
+  code            String        @unique // ADAUT, NAMTABUNG, MM1, MM2, MM_COMBO, LOUNGE
+  capacity        Int
+  location        String        @default("Gedung Selaru FIT")
+  facilities      String // "TV, AC, PC Operator, Alat Conference, Mic, Kamera"
+  priorityNotes   String? // Catatan prioritas / peruntukan ruangan
+  isCombo         Boolean       @default(false)
+  comboChildCodes String? // "MM1,MM2" untuk ruangan gabungan
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  bookings        RoomBooking[]
+}
+
+model RoomBooking {
+  id               String   @id @default(cuid())
+  bookingNumber    String   @unique // "BK-20260903-001"
+  roomId           String
+  room             Room     @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  bookingDate      DateTime
+  dateStr          String // format "YYYY-MM-DD"
+  startTime        String // format "HH:MM"
+  endTime          String // format "HH:MM"
+  purpose          String // Agenda / Keperluan
+  unitName         String // Nama Unit / Prodi pemohon
+  applicantName    String // Nama PIC
+  applicantPhone   String // No. Kontak WhatsApp
+  participantCount Int      @default(10)
+  facilityNotes    String? // Kebutuhan tambahan (kabel, mic, dll)
+  status           String   @default("CONFIRMED") // CONFIRMED, CANCELLED, COMPLETED
+  notes            String? // Catatan admin
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([dateStr, roomId])
+  @@index([status])
+}

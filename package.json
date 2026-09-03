@@ -4,14 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 5000",
-    "build": "next build",
+    "build": "prisma generate && prisma generate --schema=prisma/schema-rooms.prisma && next build",
     "start": "next start -p 5000",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
     "db:seed": "prisma db seed",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "db:rooms:push": "prisma db push --schema=prisma/schema-rooms.prisma",
+    "db:rooms:generate": "prisma generate --schema=prisma/schema-rooms.prisma",
+    "db:rooms:seed": "npx tsx scripts/seed-rooms.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

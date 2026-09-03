@@ -10,6 +10,7 @@ import {
   HelpCircle,
   Building2,
   ExternalLink,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +37,12 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
       name: "Buku Agenda Surat",
       href: "/agenda",
       icon: BookOpenCheck,
+    },
+    {
+      name: "Peminjaman Ruangan",
+      href: "/ruangan",
+      icon: CalendarDays,
+      badge: "Baru",
     },
     {
       name: "Panduan Format",
