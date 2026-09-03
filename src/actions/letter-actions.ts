@@ -166,6 +166,144 @@ export async function generateLetterNumber(input: GenerateLetterInput) {
   }
 }
 
+export interface BatchItemInput {
+  subject?: string;
+  recipient?: string;
+  applicantName?: string;
+}
+
+export interface GenerateBatchLetterInput {
+  count: number;
+  unitId: string;
+  categoryId: string;
+  classificationCode?: string;
+  signeeCode?: string;
+  letterDate?: string;
+  subject: string;
+  recipient?: string;
+  applicantName: string;
+  applicantContact?: string;
+  notes?: string;
+  items?: BatchItemInput[];
+}
+
+export async function generateBatchLetterNumbers(input: GenerateBatchLetterInput) {
+  try {
+    const totalCount = Math.max(1, Math.min(input.count || 1, 100)); // Maksimal 100 nomor per batch agar aman
+    if (!input.unitId || !input.categoryId || !input.subject.trim() || !input.applicantName.trim()) {
+      return { success: false, error: "Semua data wajib (Prodi/Unit, Kategori Perihal, Perihal, Nama Pemohon) harus diisi." };
+    }
+
+    const targetDate = input.letterDate ? new Date(input.letterDate) : new Date();
+    const year = targetDate.getFullYear();
+    const month = targetDate.getMonth() + 1;
+    const monthRomawi = getRomanMonth(month);
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Dapatkan Unit dan Kategori
+      const [unit, category] = await Promise.all([
+        tx.unit.findUnique({ where: { id: input.unitId } }),
+        tx.letterCategory.findUnique({ where: { id: input.categoryId } }),
+      ]);
+
+      if (!unit || !category) {
+        throw new Error("Unit/Prodi atau Kategori Surat tidak ditemukan.");
+      }
+
+      const activeClassification = input.classificationCode?.trim() || category.code;
+      const activeSignee = input.signeeCode?.trim() || unit.signeeCode || "IT-DEK";
+
+      // 2. Ambil nomor terakhir
+      const lastLetter = await tx.letterRequest.findFirst({
+        where: { year },
+        orderBy: { sequenceNumber: "desc" },
+      });
+
+      const startSequence = (lastLetter?.sequenceNumber || 0) + 1;
+      const createdLetters = [];
+
+      for (let i = 0; i < totalCount; i++) {
+        const currentSequence = startSequence + i;
+        const itemData = input.items && input.items[i];
+
+        const itemSubject = itemData?.subject?.trim()
+          ? itemData.subject.trim()
+          : totalCount > 1
+          ? `${input.subject.trim()} (Nomor #${i + 1})`
+          : input.subject.trim();
+
+        const itemRecipient = itemData?.recipient?.trim() || input.recipient?.trim() || null;
+        const itemApplicant = itemData?.applicantName?.trim() || input.applicantName.trim();
+        const fullNumber = `${currentSequence}/${activeClassification}/${activeSignee}/${year}`;
+
+        const letter = await tx.letterRequest.create({
+          data: {
+            sequenceNumber: currentSequence,
+            monthRomawi,
+            month,
+            year,
+            fullNumber,
+            classificationCode: activeClassification,
+            signeeCode: activeSignee,
+            subject: itemSubject,
+            recipient: itemRecipient,
+            applicantName: itemApplicant,
+            applicantContact: input.applicantContact?.trim() || null,
+            letterDate: targetDate,
+            notes: input.notes?.trim() || (totalCount > 1 ? `Batch ${totalCount} Nomor (#${i + 1})` : null),
+            unitId: unit.id,
+            categoryId: category.id,
+            status: "ISSUED",
+            isManual: false,
+          },
+        });
+
+        createdLetters.push({
+          id: letter.id,
+          fullNumber: letter.fullNumber,
+          sequenceNumber: letter.sequenceNumber,
+          subject: letter.subject,
+          applicantName: letter.applicantName,
+          recipient: letter.recipient,
+          letterDate: letter.letterDate.toISOString(),
+          unitName: unit.name,
+          categoryName: category.name,
+          classificationCode: letter.classificationCode,
+          signeeCode: letter.signeeCode,
+          year: letter.year,
+        });
+      }
+
+      // 3. Sinkronkan counter
+      const finalSequence = startSequence + totalCount - 1;
+      await tx.letterCounter.upsert({
+        where: { year_scope: { year, scope: "FIT" } },
+        update: { currentNumber: finalSequence },
+        create: { year, scope: "FIT", currentNumber: finalSequence },
+      });
+
+      return createdLetters;
+    });
+
+    try {
+      revalidatePath("/agenda");
+      revalidatePath("/");
+    } catch {}
+
+    return {
+      success: true,
+      count: result.length,
+      startNumber: result[0]?.fullNumber,
+      endNumber: result[result.length - 1]?.fullNumber,
+      letters: result,
+    };
+  } catch (error: unknown) {
+    console.error("Error generating batch letter numbers:", error);
+    const msg = error instanceof Error ? error.message : "Terjadi kesalahan sistem saat membuat batch nomor surat.";
+    return { success: false, error: msg };
+  }
+}
+
 export async function getLetters(filters?: {
   search?: string;
   unitId?: string;
