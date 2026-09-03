@@ -151,7 +151,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\ENS\\.gemini\\antigravity\\scratch\\fit-eoffice\\src\\generated\\room-client",
+      "value": "/home/harry/layananan-sekretariat/src/generated/room-client",
       "fromEnvVar": null
     },
     "config": {
@@ -160,12 +160,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "debian-openssl-3.0.x",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\ENS\\.gemini\\antigravity\\scratch\\fit-eoffice\\prisma\\schema-rooms.prisma",
+    "sourceFilePath": "/home/harry/layananan-sekretariat/prisma/schema-rooms.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

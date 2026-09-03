@@ -152,7 +152,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\ENS\\.gemini\\antigravity\\scratch\\fit-eoffice\\src\\generated\\room-client",
+      "value": "/home/harry/layananan-sekretariat/src/generated/room-client",
       "fromEnvVar": null
     },
     "config": {
@@ -161,12 +161,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "debian-openssl-3.0.x",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\ENS\\.gemini\\antigravity\\scratch\\fit-eoffice\\prisma\\schema-rooms.prisma",
+    "sourceFilePath": "/home/harry/layananan-sekretariat/prisma/schema-rooms.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -229,8 +229,8 @@ exports.PrismaClient = PrismaClient
 Object.assign(exports, Prisma)
 
 // file annotations for bundling tools to include these files
-path.join(__dirname, "query_engine-windows.dll.node");
-path.join(process.cwd(), "src/generated/room-client/query_engine-windows.dll.node")
+path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
+path.join(process.cwd(), "src/generated/room-client/libquery_engine-debian-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "src/generated/room-client/schema.prisma")
