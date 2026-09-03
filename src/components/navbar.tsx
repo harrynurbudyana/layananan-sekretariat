@@ -5,6 +5,7 @@ import { Plus, Menu, Calendar, ShieldCheck, Sparkles, Lock, LogOut } from "lucid
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { useAdmin } from "@/context/admin-context";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,7 +19,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
             aria-label="Buka Menu"
           >
             <Menu className="h-5 w-5" />
@@ -32,7 +33,9 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Dark / Light Theme Toggle */}
+          <ThemeToggle />
           {/* Admin Mode Status / Trigger */}
           {isAdmin ? (
             <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-xs">
