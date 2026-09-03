@@ -27,7 +27,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
               <Sparkles className="h-3 w-3" />
-              Sistem Otomasi Penomoran Surat
+              Sistem Otomasi Layanan Sekretariat FIT
             </span>
           </div>
         </div>
