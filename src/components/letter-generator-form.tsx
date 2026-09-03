@@ -75,12 +75,15 @@ export function LetterGeneratorForm({ units, categories }: Props) {
   }, [isAdmin, mode]);
 
   // Shared Form State
-  const [unitId, setUnitId] = useState(units[0]?.id || "");
-  const [categoryId, setCategoryId] = useState(categories[0]?.id || "");
+  const defaultCategory = categories.find((c) => c.code === "SKR05") || categories[0];
+  const defaultUnit = units.find((u) => u.signeeCode === "IT-DEK" || u.code === "DEK") || units[0];
+
+  const [unitId, setUnitId] = useState(defaultUnit?.id || units[0]?.id || "");
+  const [categoryId, setCategoryId] = useState(defaultCategory?.id || categories[0]?.id || "");
   
   // Custom signee & classification code
-  const [customSignee, setCustomSignee] = useState("IT-DEK");
-  const [customClassification, setCustomClassification] = useState(categories[0]?.code || "AKD01");
+  const [customSignee, setCustomSignee] = useState(defaultUnit?.signeeCode || "IT-DEK");
+  const [customClassification, setCustomClassification] = useState(defaultCategory?.code || "SKR05");
 
   // Single & General fields
   const [subject, setSubject] = useState("");
@@ -203,11 +206,14 @@ export function LetterGeneratorForm({ units, categories }: Props) {
   const previewYear = parsedDate.getFullYear();
 
   // Calculate live preview number
+  const currentClassification = customClassification || selectedCategory?.code || "SKR05";
+  const currentSignee = customSignee || "IT-DEK";
+
   const previewNumber = mode === "manual" && manualFullNumber.trim()
     ? manualFullNumber.trim()
     : mode === "batch"
-    ? `[No_Urut] s.d. [No_Urut + ${batchCount - 1}]/${customClassification || selectedCategory?.code || "AKD01"}/${customSignee || "IT-DEK"}/${previewYear}`
-    : `${mode === "manual" && manualSequenceNumber ? manualSequenceNumber : "[No_Urut]"}/${customClassification || selectedCategory?.code || "AKD01"}/${customSignee || "IT-DEK"}/${previewYear}`;
+    ? `[No_Urut] s.d. [No_Urut + ${batchCount - 1}]/${currentClassification}/${currentSignee}/${previewYear}`
+    : `${mode === "manual" && manualSequenceNumber ? manualSequenceNumber : "[No_Urut]"}/${currentClassification}/${currentSignee}/${previewYear}`;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);

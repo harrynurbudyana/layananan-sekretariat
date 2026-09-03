@@ -165,7 +165,7 @@ export async function createRoomBooking(input: CreateRoomBookingInput) {
         applicantPhone: input.applicantPhone.trim() || "-",
         participantCount: Number(input.participantCount) || 10,
         facilityNotes: input.facilityNotes?.trim() || null,
-        status: "CONFIRMED",
+        status: "PENDING",
       },
       include: {
         room: true,
@@ -237,7 +237,94 @@ export async function getRoomBookings(filters?: {
   }
 }
 
-// 6. Cancel Room Booking (Admin Action)
+// 6. Approve Room Booking (Khusus Staf Sekretariat)
+export async function approveRoomBooking(bookingId: string, adminNotes?: string) {
+  try {
+    const booking = await prismaRooms.roomBooking.findUnique({
+      where: { id: bookingId },
+      include: { room: true },
+    });
+
+    if (!booking) {
+      return { success: false, error: "Data peminjaman tidak ditemukan." };
+    }
+
+    // Pastikan tidak ada peminjaman CONFIRMED lain yang bentrok
+    const availCheck = await checkRoomAvailability(
+      booking.roomId,
+      booking.dateStr,
+      booking.startTime,
+      booking.endTime,
+      booking.id
+    );
+
+    if (!availCheck.available) {
+      return {
+        success: false,
+        error: `Tidak dapat disetujui: ${availCheck.error}`,
+      };
+    }
+
+    const updated = await prismaRooms.roomBooking.update({
+      where: { id: bookingId },
+      data: {
+        status: "CONFIRMED",
+        notes: adminNotes || "Disetujui resmi oleh Staf Sekretariat Fakultas",
+      },
+      include: { room: true },
+    });
+
+    try {
+      revalidatePath("/ruangan");
+      revalidatePath("/");
+    } catch {}
+
+    return {
+      success: true,
+      booking: {
+        ...updated,
+        bookingDate: updated.bookingDate.toISOString(),
+        createdAt: updated.createdAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error("Error approving room booking:", error);
+    return { success: false, error: "Gagal menyetujui peminjaman ruangan." };
+  }
+}
+
+// 7. Reject Room Booking (Khusus Staf Sekretariat)
+export async function rejectRoomBooking(bookingId: string, reason: string) {
+  try {
+    const updated = await prismaRooms.roomBooking.update({
+      where: { id: bookingId },
+      data: {
+        status: "REJECTED",
+        notes: reason || "Ditolak oleh Staf Sekretariat Fakultas",
+      },
+      include: { room: true },
+    });
+
+    try {
+      revalidatePath("/ruangan");
+      revalidatePath("/");
+    } catch {}
+
+    return {
+      success: true,
+      booking: {
+        ...updated,
+        bookingDate: updated.bookingDate.toISOString(),
+        createdAt: updated.createdAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error("Error rejecting room booking:", error);
+    return { success: false, error: "Gagal menolak peminjaman ruangan." };
+  }
+}
+
+// 8. Cancel Room Booking (Admin Action)
 export async function cancelRoomBooking(bookingId: string, reason?: string) {
   try {
     const updated = await prismaRooms.roomBooking.update({

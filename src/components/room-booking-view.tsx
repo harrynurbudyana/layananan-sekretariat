@@ -5,6 +5,8 @@ import {
   checkRoomAvailability,
   createRoomBooking,
   cancelRoomBooking,
+  approveRoomBooking,
+  rejectRoomBooking,
 } from "@/actions/room-actions";
 import { useAdmin } from "@/context/admin-context";
 import {
@@ -34,6 +36,8 @@ import {
   FileText,
   CalendarDays,
   ShieldAlert,
+  ShieldCheck,
+  XCircle,
 } from "lucide-react";
 
 interface RoomItem {
@@ -162,6 +166,9 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [cancelModalId, setCancelModalId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState<string>("");
+  const [rejectModalId, setRejectModalId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState<string>("");
+  const [listStatusFilter, setListStatusFilter] = useState<string>("ALL");
 
   // Schedule View Date State
   const [scheduleDate, setScheduleDate] = useState<string>(
@@ -251,6 +258,11 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
 
   // Copy WhatsApp-ready summary
   const handleCopyWhatsApp = (b: BookingItem) => {
+    let statusText = "MENUNGGU PERSETUJUAN (PENDING SEKRETARIAT)";
+    if (b.status === "CONFIRMED") statusText = "DISETUJUI RESMI OLEH SEKRETARIAT FIT";
+    if (b.status === "REJECTED") statusText = `DITOLAK (${b.notes || "Alasan internal"})`;
+    if (b.status === "CANCELLED") statusText = `DIBATALKAN (${b.notes || "Dibatalkan"})`;
+
     const text = `*PEMINJAMAN RUANGAN FAKULTAS ILMU TERAPAN*\n` +
       `No. Booking: ${b.bookingNumber}\n` +
       `Ruangan: ${b.room.name}\n` +
@@ -260,11 +272,59 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
       `Unit/Prodi: ${b.unitName}\n` +
       `PIC: ${b.applicantName} (${b.applicantPhone})\n` +
       `Peserta: ±${b.participantCount} Orang\n` +
-      `Status: Terkonfirmasi Resmi (FIT E-Office)`;
+      `Status: *${statusText}*`;
 
     navigator.clipboard.writeText(text);
     setCopiedId(b.id);
     setTimeout(() => setCopiedId(null), 2500);
+  };
+
+  // Handle Approve Booking (Secretariat Only)
+  const handleApprove = (bookingId: string) => {
+    if (!isAdmin) {
+      openLoginModal(() => handleApprove(bookingId));
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await approveRoomBooking(bookingId);
+      if (res.success && res.booking) {
+        setBookings((prev) =>
+          prev.map((item) =>
+            item.id === bookingId ? (res.booking as unknown as BookingItem) : item
+          )
+        );
+      } else {
+        alert(res.error || "Gagal menyetujui peminjaman.");
+      }
+    });
+  };
+
+  // Handle Confirm Reject (Secretariat Only)
+  const handleConfirmReject = () => {
+    if (!rejectModalId) return;
+    if (!isAdmin) {
+      openLoginModal(() => handleConfirmReject());
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await rejectRoomBooking(
+        rejectModalId,
+        rejectReason || "Ditolak oleh Staf Sekretariat Fakultas"
+      );
+      if (res.success && res.booking) {
+        setBookings((prev) =>
+          prev.map((item) =>
+            item.id === rejectModalId ? (res.booking as unknown as BookingItem) : item
+          )
+        );
+        setRejectModalId(null);
+        setRejectReason("");
+      } else {
+        alert(res.error || "Gagal menolak peminjaman.");
+      }
+    });
   };
 
   // Handle Cancel Booking
@@ -291,6 +351,11 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
     });
   };
 
+  // Hitung jumlah pengajuan PENDING untuk badge
+  const pendingCount = useMemo(() => {
+    return bookings.filter((b) => b.status === "PENDING").length;
+  }, [bookings]);
+
   // Filtered Bookings for Schedule View
   const scheduleBookings = useMemo(() => {
     return bookings.filter(
@@ -312,10 +377,11 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
 
       const matchRoom = listRoomFilter === "ALL" || b.roomId === listRoomFilter;
       const matchDate = !listDateFilter || b.dateStr === listDateFilter;
+      const matchStatus = listStatusFilter === "ALL" || b.status === listStatusFilter;
 
-      return matchSearch && matchRoom && matchDate;
+      return matchSearch && matchRoom && matchDate && matchStatus;
     });
-  }, [bookings, listSearch, listRoomFilter, listDateFilter]);
+  }, [bookings, listSearch, listRoomFilter, listDateFilter, listStatusFilter]);
 
   // Working Hours (07:00 to 18:00)
   const timeSlots = [
@@ -357,7 +423,13 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
 
           <button
             type="button"
-            onClick={() => setActiveTab("schedule")}
+            onClick={() => {
+              if (!isAdmin) {
+                openLoginModal(() => setActiveTab("schedule"));
+              } else {
+                setActiveTab("schedule");
+              }
+            }}
             className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "schedule"
                 ? "bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 shadow-xs"
@@ -366,6 +438,12 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
           >
             <CalendarDays className="h-4 w-4" />
             <span>Jadwal Ruangan</span>
+            {!isAdmin && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                <Lock className="h-2.5 w-2.5" />
+                <span>Sekretariat</span>
+              </span>
+            )}
           </button>
 
           <button
@@ -378,7 +456,12 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
             }`}
           >
             <FileText className="h-4 w-4" />
-            <span>Riwayat ({bookings.length})</span>
+            <span>Daftar & Approval</span>
+            {pendingCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white animate-pulse">
+                {pendingCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -389,14 +472,16 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 shadow-2xl space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center">
-                  <CheckCircle2 className="h-6 w-6" />
+                <div className="h-10 w-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
+                  <Clock className="h-6 w-6" />
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                    Peminjaman Ruangan Berhasil!
+                    Pengajuan Peminjaman Terkirim!
                   </h3>
-                  <p className="text-xs text-emerald-600 font-semibold">Tercatat Resmi di Sistem FIT E-Office</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
+                    Menunggu Persetujuan (Approval) Staf Sekretariat
+                  </p>
                 </div>
               </div>
               <button
@@ -405,6 +490,13 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
               >
                 <X className="h-5 w-5" />
               </button>
+            </div>
+
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-800 dark:text-amber-200 leading-relaxed flex items-start gap-2.5">
+              <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                Permohonan peminjaman ruangan Anda telah terdaftar di sistem dengan status <strong>PENDING</strong>. Staf Sekretariat Fakultas akan meninjau dan menyetujui pemakaian ruangan.
+              </span>
             </div>
 
             {/* Booking Number Display */}
@@ -862,21 +954,70 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: JADWAL & KETERSEDIAAN KALENDER                                     */}
+      {/* TAB 2: JADWAL & KETERSEDIAAN KALENDER (KHUSUS SEKRETARIAT)                */}
       {/* ========================================================================= */}
       {activeTab === "schedule" && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-6">
-          {/* Schedule Date Navigator */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-red-600" />
-                <span>Matriks Jadwal Pemakaian Ruangan</span>
+        !isAdmin ? (
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-12 shadow-sm text-center max-w-2xl mx-auto my-6 space-y-6">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                <span>Akses Terbatas Khusus</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                Jadwal Ruangan Khusus Staf Sekretariat
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Pantau ketersediaan slot waktu seluruh ruangan pada tanggal terpilih secara visual.
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-lg mx-auto">
+                Matriks pemakaian ruangan dan rincian agenda rapat pimpinan fakultas hanya dapat dipantau oleh Staf Sekretariat Fakultas. Silakan masuk sebagai admin untuk melihat jadwal.
               </p>
             </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => openLoginModal(() => setActiveTab("schedule"))}
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Lock className="h-4 w-4" />
+                <span>Masuk sebagai Admin Sekretariat</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("form")}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm cursor-pointer"
+              >
+                Kembali ke Form Pinjam
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-6">
+            {/* Authorized Status Banner */}
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5 text-emerald-800 dark:text-emerald-200 font-semibold">
+                <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>Akses Terbuka: Terverifikasi sebagai <strong>Admin Sekretariat Fakultas</strong>.</span>
+              </div>
+              <div className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                Menampilkan seluruh agenda pemakaian ruangan terkonfirmasi.
+              </div>
+            </div>
+
+            {/* Schedule Date Navigator */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-red-600" />
+                  <span>Matriks Jadwal Pemakaian Ruangan</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pantau ketersediaan slot waktu seluruh ruangan pada tanggal terpilih secara visual.
+                </p>
+              </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -1011,6 +1152,7 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
             })}
           </div>
         </div>
+      )
       )}
 
       {/* ========================================================================= */}
@@ -1047,6 +1189,18 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                 ))}
               </select>
 
+              <select
+                value={listStatusFilter}
+                onChange={(e) => setListStatusFilter(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="PENDING">Menunggu Review</option>
+                <option value="CONFIRMED">Disetujui Resmi</option>
+                <option value="REJECTED">Ditolak</option>
+                <option value="CANCELLED">Dibatalkan</option>
+              </select>
+
               <input
                 type="date"
                 value={listDateFilter}
@@ -1077,7 +1231,7 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                   <th className="py-3 px-4 min-w-[200px]">Agenda & Unit</th>
                   <th className="py-3 px-4">PIC & Kontak</th>
                   <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Aksi</th>
+                  <th className="py-3 px-4 text-center">Aksi / Approval</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -1089,7 +1243,6 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                   </tr>
                 ) : (
                   filteredListBookings.map((b) => {
-                    const isCancelled = b.status === "CANCELLED";
                     return (
                       <tr key={b.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
                         {/* Booking Number */}
@@ -1125,6 +1278,11 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                             Unit: {b.unitName} &bull; Peserta: ±{b.participantCount} org
                           </div>
+                          {b.notes && (
+                            <div className="text-[10px] text-slate-400 italic mt-0.5">
+                              Catatan: {b.notes}
+                            </div>
+                          )}
                         </td>
 
                         {/* PIC & Phone */}
@@ -1139,13 +1297,30 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
 
                         {/* Status */}
                         <td className="py-3 px-4 text-center">
-                          {isCancelled ? (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">
-                              Dibatalkan
+                          {b.status === "PENDING" && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 shadow-2xs">
+                              <Clock className="h-3 w-3" />
+                              <span>Menunggu Review</span>
                             </span>
-                          ) : (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                              Terkonfirmasi
+                          )}
+                          {b.status === "CONFIRMED" && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Disetujui</span>
+                            </span>
+                          )}
+                          {b.status === "REJECTED" && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                              title={b.notes || "Ditolak"}
+                            >
+                              <XCircle className="h-3 w-3" />
+                              <span>Ditolak</span>
+                            </span>
+                          )}
+                          {b.status === "CANCELLED" && (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                              Dibatalkan
                             </span>
                           )}
                         </td>
@@ -1166,8 +1341,35 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                               )}
                             </button>
 
-                            {/* Cancel Booking (Admin Only) */}
-                            {!isCancelled && (
+                            {/* PENDING ACTIONS (Approval / Reject) */}
+                            {b.status === "PENDING" && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(b.id)}
+                                  title={isAdmin ? "Setujui Permohonan Ruangan (Approval)" : "Setujui Permohonan (Khusus Staf Sekretariat)"}
+                                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                    isAdmin
+                                      ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+                                      : "text-slate-400 hover:text-amber-600"
+                                  }`}
+                                >
+                                  {isAdmin ? <Check className="h-4 w-4 font-black" /> : <Lock className="h-3.5 w-3.5" />}
+                                </button>
+
+                                {isAdmin && (
+                                  <button
+                                    onClick={() => setRejectModalId(b.id)}
+                                    title="Tolak Permohonan Ruangan"
+                                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                  >
+                                    <X className="h-4 w-4 font-black" />
+                                  </button>
+                                )}
+                              </>
+                            )}
+
+                            {/* CONFIRMED ACTIONS (Cancel) */}
+                            {b.status === "CONFIRMED" && (
                               <button
                                 onClick={() => {
                                   if (!isAdmin) {
@@ -1245,6 +1447,62 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                 className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-600/20 cursor-pointer"
               >
                 Ya, Batalkan Pemesanan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REJECT BOOKING MODAL (KHUSUS STAF SEKRETARIAT) */}
+      {rejectModalId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center shrink-0">
+                <XCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  Tolak Pengajuan Peminjaman?
+                </h3>
+                <p className="text-xs text-rose-600 font-semibold">Tindakan Khusus Staf Sekretariat</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Pengajuan ini akan ditolak dan pemohon akan melihat status Ditolak beserta alasan yang Anda cantumkan di bawah ini.
+            </p>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                Alasan Penolakan:
+              </label>
+              <input
+                type="text"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Contoh: Ruangan diprioritaskan untuk Rapat Senat / Dekanat"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setRejectModalId(null);
+                  setRejectReason("");
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReject}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 cursor-pointer"
+              >
+                Tolak Pengajuan
               </button>
             </div>
           </div>
