@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Unit {
+  id          String          @id @default(cuid())
+  name        String
+  code        String          @unique // RPLA, SI, SIA, TT, TK, MP, PH, TRM, DEK, WD1, WD2, TU
+  signeeCode  String          @default("IT-DEK") // IT-DEK, IT-WD1, IT-WD2, IT-RPLA, IT-TU
+  leaderName  String?
+  category    String          @default("PRODI") // PRODI, BAGIAN, DEKANAT
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  letters     LetterRequest[]
+}
+
+model LetterCategory {
+  id                 String          @id @default(cuid())
+  name               String          // e.g. "Akademik Umum / Surat Tugas", "Magang / Kerja Praktik"
+  code               String          @unique // e.g. "AKD01", "AKD13", "KMS01", "SDM01"
+  group              String          @default("AKD") // AKD, KMS, SDM, KRS, SAR, KUG, TUS
+  classificationCode String?         // Kode tambahan jika ada
+  description        String?
+  isActive           Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  letters            LetterRequest[]
+}
+
+model LetterRequest {
+  id                 String         @id @default(cuid())
+  sequenceNumber     Int            // 1532
+  monthRomawi        String?        // opsional jika format baru tidak memerlukan bulan romawi
+  month              Int
+  year               Int            // 2026
+  fullNumber         String         @unique // "1532/AKD01/IT-DEK/2026"
+  classificationCode String         @default("AKD01") // AKD01, AKD13, dll.
+  signeeCode         String         @default("IT-DEK") // IT-DEK, IT-WD1, dll.
+  subject            String
+  recipient          String?
+  applicantName      String
+  applicantContact   String?
+  letterDate         DateTime       @default(now())
+  status             String         @default("ISSUED") // ISSUED, ARCHIVED, CANCELLED
+  isManual           Boolean        @default(false)    // true jika diinput/diedit manual
+  notes              String?
+  
+  unitId             String
+  unit               Unit           @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  categoryId         String
+  category           LetterCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([year, sequenceNumber])
+  @@index([unitId])
+  @@index([categoryId])
+}
+
+model LetterCounter {
+  id            String   @id @default(cuid())
+  year          Int
+  scope         String   @default("FIT") // Global fakultas
+  currentNumber Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([year, scope])
+}
