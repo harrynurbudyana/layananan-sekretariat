@@ -80,6 +80,23 @@ interface UnitItem {
 }
 
 const STAFF_BY_UNIT: Record<string, string[]> = {
+  // Staf Urusan Fakultas
+  "Staf Urusan Sekretariat": ["Dini (Staf Sekretariat)", "Pak Satri", "Staf Sekretariat"],
+  "Staf Urusan Layanan Kerjasama dan Magang": ["Najwa (Staf LKM)", "Fajri", "Teh Fitri", "Staf LKM"],
+  "Staf Urusan Layanan Akademik": ["Annisa (Staf LA)", "Puspa (Staf LA)", "Bu Lisda (Staf LA)", "Teh Ica (Staf LA)", "Staf LA"],
+  "Staf Urusan Kemahasiswaan": ["Nia (Staf Kemahasiswaan)", "Alfan", "Staf Kemahasiswaan"],
+  "Staf Urusan Sumber Daya, Keuangan & Logistik": ["Teh Yayu (Staf Keuangan)", "Hanif (Staf SDM)", "Najwa", "Staf SDM/Keuangan"],
+  "Staf Urusan Laboratorium": ["Laboran / Asisten Lab", "Staf Lab"],
+
+  // Kepala Urusan Fakultas
+  "Kepala Urusan Sekretariat": ["Dini (Staf Sekretariat)", "Pak Satri", "Kaur Sekretariat"],
+  "Kepala Urusan Layanan Kerjasama dan Magang": ["Najwa (Staf LKM)", "Fajri", "Teh Fitri", "Kaur Layanan Kerjasama & Magang"],
+  "Kepala Urusan Layanan Akademik": ["Annisa (Staf LA)", "Puspa (Staf LA)", "Bu Lisda (Staf LA)", "Teh Ica (Staf LA)", "Kaur Layanan Akademik"],
+  "Kepala Urusan Kemahasiswaan": ["Nia (Staf Kemahasiswaan)", "Alfan", "Kaur Kemahasiswaan"],
+  "Kepala Urusan Sumber Daya, Keuangan & Logistik": ["Teh Yayu (Staf Keuangan)", "Hanif (Staf SDM)", "Najwa", "Kaur SDM & Keuangan"],
+  "Kepala Urusan Laboratorium": ["Kaur Laboratorium & Bengkel", "Laboran / Asisten Lab"],
+
+  // Program Studi
   "Prodi D3 Rekayasa Perangkat Lunak Aplikasi": ["Septi (Admin Prodi)", "Kaprodi D3 RPL", "Dosen / Staf RPL"],
   "Prodi D3 Sistem Informasi": ["Paxy (Admin Prodi)", "Irbah (Staf Prodi)", "Alifia", "Kaprodi D3 SI"],
   "Prodi D3 Sistem Informasi Akuntansi": ["Paxy (Admin Prodi)", "Kaprodi D3 SIA"],
@@ -90,24 +107,33 @@ const STAFF_BY_UNIT: Record<string, string[]> = {
   "Prodi S1 Terapan Teknologi Rekayasa Multimedia": ["Zuchra (Admin Prodi)", "Kaprodi S1 TRM"],
   "Prodi S1 Terapan Sistem Informasi Kota Cerdas": ["Dadan (Admin Prodi)", "Irbah", "Kaprodi S1 SIKC"],
   "Prodi S2 Terapan Rekayasa Teknologi Informasi": ["Ivo (Admin Prodi)", "Kaprodi S2 RTI"],
-  "Kepala Urusan Layanan Akademik": ["Annisa (Staf LA)", "Puspa (Staf LA)", "Bu Lisda (Staf LA)", "Teh Ica (Staf LA)", "Kaur Layanan Akademik"],
-  "Kepala Urusan Sekretariat": ["Dini (Staf Sekretariat)", "Pak Satri", "Kaur Sekretariat"],
-  "Kepala Urusan Sumber Daya, Keuangan & Logistik": ["Teh Yayu (Staf Keuangan)", "Hanif (Staf SDM)", "Najwa", "Kaur SDM & Keuangan"],
-  "Kepala Urusan Layanan Kerjasama dan Magang": ["Najwa (Staf LKM)", "Fajri", "Teh Fitri", "Kaur Layanan Kerjasama & Magang"],
-  "Kepala Urusan Kemahasiswaan": ["Nia (Staf Kemahasiswaan)", "Alfan", "Kaur Kemahasiswaan"],
-  "Kepala Urusan Laboratorium": ["Kaur Laboratorium & Bengkel", "Laboran / Asisten Lab"],
+
+  // Pimpinan & Ormawa
   "Dekan Fakultas Ilmu Terapan": ["Dekan FIT", "Staf Dekanat"],
   "Wakil Dekan 1 (Akademik & Riset)": ["Wadek 1 FIT", "Staf Akademik & Riset"],
   "Wakil Dekan 2 (Keuangan, SDM & Kemahasiswaan)": ["Wadek 2 FIT", "Staf Keuangan & Kemahasiswaan"],
+  "Dekanat FIT": ["Dekan FIT", "Wakil Dekan 1", "Wakil Dekan 2", "Staf Dekanat"],
+  "Sekretariat Fakultas": ["Dini (Staf Sekretariat)", "Kaur Sekretariat", "Staf Sekretariat"],
   "Kelompok Keahlian Applied Information Technology and Multimedia": ["Ketua KK AITM", "Staf KK AITM"],
   "Kelompok Keahlian Applied Digital Business Entrepreneur and Tourism": ["Bu Vany", "Ketua KK DBS"],
   "Research Alliance ATAP": ["Ketua Research Alliance ATAP", "Peneliti RA ATAP"],
-  "Dekanat FIT": ["Dekan FIT", "Wakil Dekan 1", "Wakil Dekan 2", "Staf Dekanat"],
-  "Sekretariat Fakultas": ["Dini (Staf Sekretariat)", "Kaur Sekretariat", "Staf Sekretariat"],
   "BEM / DPM FIT": ["Ketua BEM", "Ketua DPM", "Pengurus BEM FIT"],
   "Himpunan Mahasiswa (HIMA)": ["Ketua HIMA", "Sekretaris HIMA", "Panitia Kegiatan"],
   "Panitia Kegiatan Khusus": ["Ketua Panitia", "Sekretaris Panitia"],
 };
+
+// Helper pencari staf yang fleksibel dengan kode unit di dalam kurung
+function getStaffList(unitStr: string): string[] {
+  if (STAFF_BY_UNIT[unitStr]) return STAFF_BY_UNIT[unitStr];
+  const clean = unitStr.replace(/\s*\([^)]*\)/, "").trim();
+  if (STAFF_BY_UNIT[clean]) return STAFF_BY_UNIT[clean];
+  for (const [key, val] of Object.entries(STAFF_BY_UNIT)) {
+    if (unitStr.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(unitStr.toLowerCase())) {
+      return val;
+    }
+  }
+  return [];
+}
 
 interface Props {
   rooms: RoomItem[];
@@ -129,10 +155,10 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
   );
   const [startTime, setStartTime] = useState<string>("09:00");
   const [endTime, setEndTime] = useState<string>("11:00");
-  const defaultUnit = units[0]?.name || "Prodi D3 Rekayasa Perangkat Lunak Aplikasi";
+  const defaultUnit = "Staf Urusan Sekretariat (IT-SKR)";
   const [unitName, setUnitName] = useState<string>(defaultUnit);
   const [applicantName, setApplicantName] = useState<string>(
-    STAFF_BY_UNIT[defaultUnit]?.[0] || ""
+    getStaffList(defaultUnit)?.[0] || "Dini (Staf Sekretariat)"
   );
   const [applicantPhone, setApplicantPhone] = useState<string>("");
   const [participantCount, setParticipantCount] = useState<number>(15);
@@ -140,12 +166,12 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
   const [facilityNotes, setFacilityNotes] = useState<string>("");
 
   const currentUnitStaff = useMemo(() => {
-    return STAFF_BY_UNIT[unitName] || [];
+    return getStaffList(unitName);
   }, [unitName]);
 
   const handleUnitChange = (newUnit: string) => {
     setUnitName(newUnit);
-    const staffList = STAFF_BY_UNIT[newUnit];
+    const staffList = getStaffList(newUnit);
     if (staffList && staffList.length > 0) {
       setApplicantName(staffList[0]);
     }
@@ -448,7 +474,13 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
 
           <button
             type="button"
-            onClick={() => setActiveTab("list")}
+            onClick={() => {
+              if (!isAdmin) {
+                openLoginModal(() => setActiveTab("list"));
+              } else {
+                setActiveTab("list");
+              }
+            }}
             className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "list"
                 ? "bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 shadow-xs"
@@ -457,11 +489,16 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
           >
             <FileText className="h-4 w-4" />
             <span>Daftar & Approval</span>
-            {pendingCount > 0 && (
+            {!isAdmin ? (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                <Lock className="h-2.5 w-2.5" />
+                <span>Sekretariat</span>
+              </span>
+            ) : pendingCount > 0 ? (
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white animate-pulse">
                 {pendingCount}
               </span>
-            )}
+            ) : null}
           </button>
         </div>
       </div>
@@ -726,16 +763,49 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                     required
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:outline-none"
                   >
-                    {units.map((u) => (
-                      <option key={u.id} value={u.name}>
-                        {u.name} ({u.signeeCode})
-                      </option>
-                    ))}
-                    <option value="Dekanat FIT">Dekanat / Pimpinan FIT</option>
-                    <option value="Sekretariat Fakultas">Sekretariat Fakultas</option>
-                    <option value="BEM / DPM FIT">BEM / DPM FIT (Ormawa)</option>
-                    <option value="Himpunan Mahasiswa (HIMA)">Himpunan Mahasiswa (HIMA)</option>
-                    <option value="Panitia Kegiatan Khusus">Panitia Kegiatan Khusus</option>
+                    <optgroup label="── Staf Urusan Fakultas ──">
+                      <option value="Staf Urusan Sekretariat (IT-SKR)">Staf Urusan Sekretariat (IT-SKR)</option>
+                      <option value="Staf Urusan Layanan Kerjasama dan Magang (IT-LKM)">Staf Urusan Layanan Kerjasama dan Magang (IT-LKM)</option>
+                      <option value="Staf Urusan Layanan Akademik (IT-LA)">Staf Urusan Layanan Akademik (IT-LA)</option>
+                      <option value="Staf Urusan Kemahasiswaan (IT-KMH)">Staf Urusan Kemahasiswaan (IT-KMH)</option>
+                      <option value="Staf Urusan Sumber Daya, Keuangan & Logistik (IT-SDM)">Staf Urusan Sumber Daya, Keuangan & Logistik (IT-SDM)</option>
+                      <option value="Staf Urusan Laboratorium (IT-LAB)">Staf Urusan Laboratorium (IT-LAB)</option>
+                    </optgroup>
+
+                    <optgroup label="── Kepala Urusan Fakultas ──">
+                      <option value="Kepala Urusan Sekretariat (IT-SKR)">Kepala Urusan Sekretariat (IT-SKR)</option>
+                      <option value="Kepala Urusan Layanan Kerjasama dan Magang (IT-LKM)">Kepala Urusan Layanan Kerjasama dan Magang (IT-LKM)</option>
+                      <option value="Kepala Urusan Layanan Akademik (IT-LA)">Kepala Urusan Layanan Akademik (IT-LA)</option>
+                      <option value="Kepala Urusan Kemahasiswaan (IT-KMH)">Kepala Urusan Kemahasiswaan (IT-KMH)</option>
+                      <option value="Kepala Urusan Sumber Daya, Keuangan & Logistik (IT-SDM)">Kepala Urusan Sumber Daya, Keuangan & Logistik (IT-SDM)</option>
+                      <option value="Kepala Urusan Laboratorium (IT-LAB)">Kepala Urusan Laboratorium (IT-LAB)</option>
+                    </optgroup>
+
+                    <optgroup label="── Pimpinan Fakultas ──">
+                      <option value="Dekan Fakultas Ilmu Terapan (IT-DEK)">Dekan Fakultas Ilmu Terapan (IT-DEK)</option>
+                      <option value="Wakil Dekan 1 (Akademik & Riset) (IT-WD1)">Wakil Dekan 1 (Akademik & Riset) (IT-WD1)</option>
+                      <option value="Wakil Dekan 2 (Keuangan, SDM & Kemahasiswaan) (IT-WD2)">Wakil Dekan 2 (Keuangan, SDM & Kemahasiswaan) (IT-WD2)</option>
+                      <option value="Dekanat FIT">Dekanat / Pimpinan FIT</option>
+                    </optgroup>
+
+                    <optgroup label="── Program Studi ──">
+                      {units.filter((u) => u.name.startsWith("Prodi")).map((u) => (
+                        <option key={u.id} value={`${u.name} (${u.signeeCode})`}>
+                          {u.name} ({u.signeeCode})
+                        </option>
+                      ))}
+                    </optgroup>
+
+                    <optgroup label="── Kelompok Keahlian & Ormawa ──">
+                      {units.filter((u) => u.name.startsWith("Kelompok Keahlian")).map((u) => (
+                        <option key={u.id} value={`${u.name} (${u.signeeCode})`}>
+                          {u.name} ({u.signeeCode})
+                        </option>
+                      ))}
+                      <option value="BEM / DPM FIT">BEM / DPM FIT (Ormawa)</option>
+                      <option value="Himpunan Mahasiswa (HIMA)">Himpunan Mahasiswa (HIMA)</option>
+                      <option value="Panitia Kegiatan Khusus">Panitia Kegiatan Khusus</option>
+                    </optgroup>
                   </select>
                 </div>
 
@@ -1156,10 +1226,58 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: DAFTAR & RIWAYAT PEMINJAMAN                                        */}
+      {/* TAB 3: DAFTAR & RIWAYAT PEMINJAMAN (KHUSUS SEKRETARIAT)                   */}
       {/* ========================================================================= */}
       {activeTab === "list" && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-5">
+        !isAdmin ? (
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-12 shadow-sm text-center max-w-2xl mx-auto my-6 space-y-6">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                <span>Akses Terbatas Khusus</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                Daftar & Approval Khusus Staf Sekretariat
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-lg mx-auto">
+                Daftar permohonan, riwayat kegiatan, dan proses persetujuan (approval) peminjaman ruangan hanya dapat diakses dan dikelola oleh Staf Sekretariat Fakultas. Silakan masuk sebagai admin untuk mengakses data.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => openLoginModal(() => setActiveTab("list"))}
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Lock className="h-4 w-4" />
+                <span>Masuk sebagai Admin Sekretariat</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("form")}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm cursor-pointer"
+              >
+                Kembali ke Form Pinjam
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-5">
+            {/* Authorized Status Banner */}
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5 text-emerald-800 dark:text-emerald-200 font-semibold">
+                <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>Akses Terbuka: Terverifikasi sebagai <strong>Admin Sekretariat Fakultas</strong>.</span>
+              </div>
+              <div className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                Kelola approval pengajuan peminjaman ruangan dan batalkan reservasi bila diperlukan.
+              </div>
+            </div>
           {/* Header & Filter Controls */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-3">
             {/* Search */}
@@ -1398,6 +1516,7 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
             </table>
           </div>
         </div>
+      )
       )}
 
       {/* CANCEL BOOKING MODAL */}
