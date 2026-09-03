@@ -32,6 +32,8 @@ import {
   CheckSquare,
   Square,
   Lock,
+  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { useAdmin } from "@/context/admin-context";
 
@@ -387,8 +389,60 @@ export function AgendaTable({ initialLetters, units, categories }: Props) {
     );
   };
 
+  // RESTRICTED ACCESS GATE: KHUSUS STAF SEKRETARIAT FAKULTAS
+  if (!isAdmin) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-12 shadow-sm text-center max-w-2xl mx-auto my-8 space-y-6">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shadow-inner">
+          <Lock className="w-8 h-8" />
+        </div>
+
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 text-xs font-bold uppercase tracking-wider">
+            <ShieldAlert className="h-3.5 w-3.5" />
+            <span>Akses Terbatas Khusus</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            Buku Agenda Surat Khusus Staf Sekretariat
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-lg mx-auto">
+            Halaman Buku Agenda memuat seluruh rekapitulasi 1.620+ dokumen persuratan resmi Fakultas Ilmu Terapan. Sesuai kebijakan tata kelola persuratan, buku agenda hanya dapat dibuka dan dipantau oleh Staf Sekretariat Fakultas.
+          </p>
+        </div>
+
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => openLoginModal()}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-600/20 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Lock className="h-4 w-4" />
+            <span>Masuk sebagai Admin Sekretariat</span>
+          </button>
+          <a
+            href="/"
+            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm transition-all text-center"
+          >
+            Kembali ke Dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
+      {/* Authorized Status Banner */}
+      <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5 text-emerald-800 dark:text-emerald-200 font-semibold">
+          <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span>Akses Terbuka: Terverifikasi sebagai <strong>Admin Sekretariat Fakultas</strong>.</span>
+        </div>
+        <div className="text-[11px] text-emerald-700 dark:text-emerald-400">
+          Hak akses penuh: monitoring rekam surat, pencarian, salin nomor, dan ekspor data CSV.
+        </div>
+      </div>
+
       {/* Search & Filter Bar */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row gap-3 items-center justify-between">

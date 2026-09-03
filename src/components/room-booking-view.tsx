@@ -75,6 +75,36 @@ interface UnitItem {
   signeeCode: string;
 }
 
+const STAFF_BY_UNIT: Record<string, string[]> = {
+  "Prodi D3 Rekayasa Perangkat Lunak Aplikasi": ["Septi (Admin Prodi)", "Kaprodi D3 RPL", "Dosen / Staf RPL"],
+  "Prodi D3 Sistem Informasi": ["Paxy (Admin Prodi)", "Irbah (Staf Prodi)", "Alifia", "Kaprodi D3 SI"],
+  "Prodi D3 Sistem Informasi Akuntansi": ["Paxy (Admin Prodi)", "Kaprodi D3 SIA"],
+  "Prodi D3 Teknologi Komputer": ["Nadia (Admin Prodi)", "Teh Fitri", "Kaprodi D3 TKO"],
+  "Prodi D3 Manajemen Pemasaran": ["Rangga (Admin Prodi)", "Kaprodi D3 MP"],
+  "Prodi D3 Perhotelan": ["Dika (Admin Prodi)", "Kaprodi D3 PHT"],
+  "Prodi D3 Teknologi Telekomunikasi": ["Nourman (Admin Prodi)", "Bu Yuyun", "Kaprodi D3 TT"],
+  "Prodi S1 Terapan Teknologi Rekayasa Multimedia": ["Zuchra (Admin Prodi)", "Kaprodi S1 TRM"],
+  "Prodi S1 Terapan Sistem Informasi Kota Cerdas": ["Dadan (Admin Prodi)", "Irbah", "Kaprodi S1 SIKC"],
+  "Prodi S2 Terapan Rekayasa Teknologi Informasi": ["Ivo (Admin Prodi)", "Kaprodi S2 RTI"],
+  "Kepala Urusan Layanan Akademik": ["Annisa (Staf LA)", "Puspa (Staf LA)", "Bu Lisda (Staf LA)", "Teh Ica (Staf LA)", "Kaur Layanan Akademik"],
+  "Kepala Urusan Sekretariat": ["Dini (Staf Sekretariat)", "Pak Satri", "Kaur Sekretariat"],
+  "Kepala Urusan Sumber Daya, Keuangan & Logistik": ["Teh Yayu (Staf Keuangan)", "Hanif (Staf SDM)", "Najwa", "Kaur SDM & Keuangan"],
+  "Kepala Urusan Layanan Kerjasama dan Magang": ["Najwa (Staf LKM)", "Fajri", "Teh Fitri", "Kaur Layanan Kerjasama & Magang"],
+  "Kepala Urusan Kemahasiswaan": ["Nia (Staf Kemahasiswaan)", "Alfan", "Kaur Kemahasiswaan"],
+  "Kepala Urusan Laboratorium": ["Kaur Laboratorium & Bengkel", "Laboran / Asisten Lab"],
+  "Dekan Fakultas Ilmu Terapan": ["Dekan FIT", "Staf Dekanat"],
+  "Wakil Dekan 1 (Akademik & Riset)": ["Wadek 1 FIT", "Staf Akademik & Riset"],
+  "Wakil Dekan 2 (Keuangan, SDM & Kemahasiswaan)": ["Wadek 2 FIT", "Staf Keuangan & Kemahasiswaan"],
+  "Kelompok Keahlian Applied Information Technology and Multimedia": ["Ketua KK AITM", "Staf KK AITM"],
+  "Kelompok Keahlian Applied Digital Business Entrepreneur and Tourism": ["Bu Vany", "Ketua KK DBS"],
+  "Research Alliance ATAP": ["Ketua Research Alliance ATAP", "Peneliti RA ATAP"],
+  "Dekanat FIT": ["Dekan FIT", "Wakil Dekan 1", "Wakil Dekan 2", "Staf Dekanat"],
+  "Sekretariat Fakultas": ["Dini (Staf Sekretariat)", "Kaur Sekretariat", "Staf Sekretariat"],
+  "BEM / DPM FIT": ["Ketua BEM", "Ketua DPM", "Pengurus BEM FIT"],
+  "Himpunan Mahasiswa (HIMA)": ["Ketua HIMA", "Sekretaris HIMA", "Panitia Kegiatan"],
+  "Panitia Kegiatan Khusus": ["Ketua Panitia", "Sekretaris Panitia"],
+};
+
 interface Props {
   rooms: RoomItem[];
   units: UnitItem[];
@@ -95,12 +125,27 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
   );
   const [startTime, setStartTime] = useState<string>("09:00");
   const [endTime, setEndTime] = useState<string>("11:00");
-  const [unitName, setUnitName] = useState<string>(units[0]?.name || "Fakultas Ilmu Terapan");
-  const [applicantName, setApplicantName] = useState<string>("");
+  const defaultUnit = units[0]?.name || "Prodi D3 Rekayasa Perangkat Lunak Aplikasi";
+  const [unitName, setUnitName] = useState<string>(defaultUnit);
+  const [applicantName, setApplicantName] = useState<string>(
+    STAFF_BY_UNIT[defaultUnit]?.[0] || ""
+  );
   const [applicantPhone, setApplicantPhone] = useState<string>("");
   const [participantCount, setParticipantCount] = useState<number>(15);
   const [purpose, setPurpose] = useState<string>("");
   const [facilityNotes, setFacilityNotes] = useState<string>("");
+
+  const currentUnitStaff = useMemo(() => {
+    return STAFF_BY_UNIT[unitName] || [];
+  }, [unitName]);
+
+  const handleUnitChange = (newUnit: string) => {
+    setUnitName(newUnit);
+    const staffList = STAFF_BY_UNIT[newUnit];
+    if (staffList && staffList.length > 0) {
+      setApplicantName(staffList[0]);
+    }
+  };
 
   // Live Availability Check State
   const [availChecking, setAvailChecking] = useState<boolean>(false);
@@ -585,7 +630,7 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                   </label>
                   <select
                     value={unitName}
-                    onChange={(e) => setUnitName(e.target.value)}
+                    onChange={(e) => handleUnitChange(e.target.value)}
                     required
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:outline-none"
                   >
@@ -636,9 +681,16 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
               {/* 5. PIC & Kontak */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Nama PIC Peminjam <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Nama PIC Peminjam <span className="text-red-500">*</span>
+                    </label>
+                    {currentUnitStaff.length > 0 && (
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        Staf unit tersedia
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={applicantName}
@@ -647,6 +699,33 @@ export function RoomBookingView({ rooms, units, initialBookings }: Props) {
                     placeholder="Nama Lengkap Dosen / Staff / PIC"
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-red-500 focus:outline-none"
                   />
+                  {currentUnitStaff.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Pilih Cepat Staf {unitName.replace("Kepala Urusan ", "").replace("Prodi ", "")}:
+                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {currentUnitStaff.map((staffName) => {
+                          const isSelected = applicantName === staffName;
+                          return (
+                            <button
+                              key={staffName}
+                              type="button"
+                              onClick={() => setApplicantName(staffName)}
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                isSelected
+                                  ? "bg-red-600 text-white shadow-xs"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                              }`}
+                            >
+                              <User className="h-2.5 w-2.5" />
+                              <span>{staffName}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>

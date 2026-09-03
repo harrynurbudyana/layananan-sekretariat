@@ -37,6 +37,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
       name: "Buku Agenda Surat",
       href: "/agenda",
       icon: BookOpenCheck,
+      badge: "Sekretariat",
     },
     {
       name: "Peminjaman Ruangan",
