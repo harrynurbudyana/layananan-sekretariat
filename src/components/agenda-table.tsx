@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition, useEffect, useRef } from "react";
+import Link from "next/link";
 import { deleteLetter, deleteLetters } from "@/actions/letter-actions";
 import { formatDateIndo, formatDateTimeIndo, getCategoryBadgeClass } from "@/lib/utils";
 import {
@@ -419,12 +420,12 @@ export function AgendaTable({ initialLetters, units, categories }: Props) {
             <Lock className="h-4 w-4" />
             <span>Masuk sebagai Admin Sekretariat</span>
           </button>
-          <a
+          <Link
             href="/"
             className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm transition-all text-center"
           >
             Kembali ke Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     );

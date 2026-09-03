@@ -44,7 +44,7 @@ async function cleanupOldUnits() {
   });
 
   console.log("\n=== Daftar Unit Bersih Saat Ini (" + remainingUnits.length + " Unit) ===");
-  remainingUnits.forEach(u => {
+  remainingUnits.forEach((u: { category: string; name: string; signeeCode: string }) => {
     console.log(`- [${u.category}] ${u.name} (${u.signeeCode})`);
   });
 }
